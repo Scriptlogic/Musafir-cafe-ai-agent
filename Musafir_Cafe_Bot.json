@@ -1,0 +1,298 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $(\"Telegram Trigger\").item.json.message.text }}",
+        "options": {
+          "systemMessage": "You are a smart food ordering assistant for \"Musafir Cafe\".  \n\nRules:  \n\n1. When a user sends their first message (like hi, hello), reply with:  \n\"Welcome to Musafir Cafe 🍽️  \nHow can I help you today?  \n- 🛒 Place an order  \n- ℹ️ FAQ / Information  \n- 📦 Check order / stock\"  \n\n(👉 Keep the tone friendly like a food delivery app, not like a product e-commerce site)  \n\n2. If user wants *order*:  \n- Ask step by step: name, food item, quantity  \n- Check Inventory sheet before confirming  \n   - If available → \"Your order for *[item]* (x quantity) is confirmed ✅\"  \n   - If not available → \"Sorry, *[item]* is out of stock ❌. Available options: [list items]\"  \n- Only confirmed orders go into the Orders sheet  \n- In Orders sheet always include:  \n   Status = Confirmed / Rejected  \n   Description = \"Order accepted (item available)\" OR \"Order rejected (out of stock)\"  \n\n3. If user wants *FAQ*:  \n- Answer short and clear (delivery time, payment method, restaurant hours)  \n\n4. If user wants *check order* or *check stock*:  \n- Ask for food name or order id  \n- Look up in Google Sheets (Orders / Inventory)  \n   - If checking order → reply with status (Confirmed / Rejected / Cancelled / Delivered)  \n   - If checking stock → reply with available quantity of that food  \n   - Also list all *available* food items with quantity if requested  \n\n5. If user wants *cancel order*:  \n- Reply politely:  \n  \"Sorry 🙏 I cannot cancel orders directly.  \n   Please call the restaurant owner first and inform them.  \n   Owner Contact: +95 1224567890\"  \n\n6. Always reply in short text like a normal WhatsApp chat  \n- Do not use **bold** or long paragraphs  \n- Use *stars* only for highlighting words  \n- Keep tone friendly, polite, and food-delivery app style  "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        256,
+        0
+      ],
+      "id": "814f5a23-bb55-4f14-9292-ae5bf59eb6eb",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        32,
+        272
+      ],
+      "id": "d4a5938f-8313-45b4-8f11-a3e56bc79424",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $ ('Telegram Trigger').item.json.message.chat.id }}",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        240,
+        208
+      ],
+      "id": "97674e2d-db76-4eae-ba34-92af476d0e7b",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        32,
+        0
+      ],
+      "id": "b1af5855-7b84-43e1-bf90-5e32a0205a3f",
+      "name": "Telegram Trigger",
+      "webhookId": "e93894e4-6077-414e-a6f9-c629760579f7",
+      "credentials": {
+        "telegramApi": {
+          "id": "BRfmASzpFdlfQq4L",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "dab6d338-8caa-4283-bf19-097d9136a4ec",
+      "name": "Send a text message",
+      "webhookId": "77117dc0-ff84-4f4e-bc72-a59ef9058e96",
+      "credentials": {
+        "telegramApi": {
+          "id": "BRfmASzpFdlfQq4L",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1GgfvFgbQcn6vKgeooKSBbphtJY0tSk3pOjtt6ehCfFY",
+          "mode": "list",
+          "cachedResultName": "Musafir_Cafe_Menu",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1GgfvFgbQcn6vKgeooKSBbphtJY0tSk3pOjtt6ehCfFY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2109307314,
+          "mode": "list",
+          "cachedResultName": "Menu",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1GgfvFgbQcn6vKgeooKSBbphtJY0tSk3pOjtt6ehCfFY/edit#gid=2109307314"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        464,
+        352
+      ],
+      "id": "889d566f-dc03-4ffa-beff-c03abc48b8bc",
+      "name": "GET  Menu",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OP9EUOn4SPgHRM8S",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1GgfvFgbQcn6vKgeooKSBbphtJY0tSk3pOjtt6ehCfFY",
+          "mode": "list",
+          "cachedResultName": "Musafir_Cafe_Menu",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1GgfvFgbQcn6vKgeooKSBbphtJY0tSk3pOjtt6ehCfFY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1746144149,
+          "mode": "list",
+          "cachedResultName": "CafeInfo",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1GgfvFgbQcn6vKgeooKSBbphtJY0tSk3pOjtt6ehCfFY/edit#gid=1746144149"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        368,
+        240
+      ],
+      "id": "d59082a6-c8a9-4480-b31b-02fcda683404",
+      "name": "Get  Info",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OP9EUOn4SPgHRM8S",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1GgfvFgbQcn6vKgeooKSBbphtJY0tSk3pOjtt6ehCfFY",
+          "mode": "list",
+          "cachedResultName": "Musafir_Cafe_Menu",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1GgfvFgbQcn6vKgeooKSBbphtJY0tSk3pOjtt6ehCfFY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1706807228,
+          "mode": "list",
+          "cachedResultName": "Delivery",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1GgfvFgbQcn6vKgeooKSBbphtJY0tSk3pOjtt6ehCfFY/edit#gid=1706807228"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        560,
+        224
+      ],
+      "id": "73ab9cd5-4533-4c77-a8aa-19523976afe9",
+      "name": "Get  Delivary",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OP9EUOn4SPgHRM8S",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET  Menu": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get  Info": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get  Delivary": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true,
+    "executionTimeout": 180
+  },
+  "versionId": "580e976b-481a-4d5f-8932-1993e907e53e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "63afa95031c7fb4392d57dfa4ef5f6ee885dc88f0007dd41876c2f9beba2679b"
+  },
+  "nodeGroups": [],
+  "id": "kzyf9AWZHf3n8uMu",
+  "tags": []
+}
